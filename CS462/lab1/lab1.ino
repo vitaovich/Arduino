@@ -15,7 +15,6 @@ int analogVal = 0;
 LiquidCrystal lcd(RS, E, DB4, DB5, DB6, DB7);
 void setup() {
   // put your setup code here, to run once:
-  lcd.blink();
   lcd.begin(NCOLS,NROWS);
   lcd.clear();
   lcd.print("     Hello      ADC Key Testing");
