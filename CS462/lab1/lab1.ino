@@ -9,6 +9,12 @@
 #define DB6 6
 #define DB7 7
 
+#define SELECT 641
+#define LEFT 411
+#define RIGHT 0
+#define UP 100
+#define DOWN 257
+
 int analogPin = 0;
 int analogVal = 0;
 
@@ -30,8 +36,9 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  lcd.setCursor(22,1);
+  lcd.clear();
+  lcd.setCursor(0,1);
   analogVal = analogRead(analogPin);
   lcd.print(analogVal);
-  delay(500);
+  delay(250);
 }
