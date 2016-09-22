@@ -9,14 +9,17 @@
 #define DB6 6
 #define DB7 7
 
-#define SELECT 641
-#define LEFT 411
+#define NUM_KEYS 5
 #define RIGHT 0
 #define UP 100
 #define DOWN 257
+#define LEFT 411
+#define SELECT 641
 
 int analogPin = 0;
 int analogVal = 0;
+int threshold[] = {50, 179, 334, 526, 832};
+char* keyNames[NUM_KEYS] = {"Right", "Up", "Down", "Left", "Select"};
 
 LiquidCrystal lcd(RS, E, DB4, DB5, DB6, DB7);
 void setup() {
@@ -30,7 +33,7 @@ void setup() {
   for(int i = 0; i < NCOLS; i++)
   {
     lcd.scrollDisplayLeft();
-    delay(250);
+    delay(50);
   }
 }
 
@@ -39,6 +42,17 @@ void loop() {
   lcd.clear();
   lcd.setCursor(0,1);
   analogVal = analogRead(analogPin);
-  lcd.print(analogVal);
-  delay(250);
+  lcd.print(convertKey(analogVal));
+  delay(50);
+}
+
+char* convertKey(int analogVal)
+{
+  for(int i; i < NUM_KEYS; i ++)
+  {
+    if(analogVal < threshold[i])
+    {
+      return keyNames[i];
+    }
+  }
 }
