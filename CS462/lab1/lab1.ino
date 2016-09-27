@@ -17,42 +17,61 @@
 #define SELECT 641
 
 int analogPin = 0;
-int analogVal = 0;
-int threshold[] = {50, 179, 334, 526, 832};
-char* keyNames[NUM_KEYS] = {"Right", "Up", "Down", "Left", "Select"};
-
+int threshold[] = {(RIGHT + UP)/2, (UP+DOWN)/2, (DOWN+LEFT)/2, (LEFT+SELECT)/2, (SELECT+1023)/2};
+char const * keyNames[NUM_KEYS] = {"Right", "Up", "Down", "Left", "Select"};
 LiquidCrystal lcd(RS, E, DB4, DB5, DB6, DB7);
+
 void setup() {
   // put your setup code here, to run once:
   lcd.begin(NCOLS,NROWS);
   lcd.clear();
   lcd.print("     Hello      ADC Key Testing");
   lcd.setCursor(0,1);
-  delay(100);
   lcd.print("     World!");
+  delay(1000);
   for(int i = 0; i < NCOLS; i++)
   {
     lcd.scrollDisplayLeft();
-    delay(50);
+    delay(500);
   }
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  lcd.clear();
-  lcd.setCursor(0,1);
-  analogVal = analogRead(analogPin);
-  lcd.print(convertKey(analogVal));
-  delay(50);
+  int key = checkForKey();
+  if(key != -1)
+  {
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("ADC Key Testing");
+      lcd.setCursor(0,1);
+      lcd.print(keyNames[key]);
+  } 
+  delay(10);
 }
 
-char* convertKey(int analogVal)
+int convertKey(int analogVal)
 {
-  for(int i; i < NUM_KEYS; i ++)
+  for(int i = 0; i < NUM_KEYS; i ++)
   {
     if(analogVal < threshold[i])
     {
-      return keyNames[i];
+      return i;
     }
   }
+  return -1;
 }
+
+int checkForKey()
+{
+  static int cachedKey = -1;
+  int analogVal = analogRead(analogPin);
+  int keyPressed = convertKey(analogVal);
+  if(keyPressed != cachedKey)
+  {
+    cachedKey = keyPressed;
+    return cachedKey;
+  }
+  return -1;
+}
+
