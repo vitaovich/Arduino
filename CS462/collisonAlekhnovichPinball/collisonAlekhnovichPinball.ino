@@ -91,12 +91,6 @@
 #define POP_BUMPER_TOP_LEFT 7
 //----------------------------------//
 
-//--------SETTINGS---------\\
-#define MAX_PLAYERS 4
-#define DISPLAY_DIGITS 7
-#define BALLS_PER_PLAYER 3
-//----------------------------------//
-
 #define LIGHT_BONUS_1_2_3_4_ROW 0
 #define LIGHT_BONUS_5_6_7_8_ROW 1
 #define LIGHT_BONUS_9_10_20_ROW 2
@@ -183,12 +177,13 @@
 #define LIGHT_PLAYER_UP_3_COL 2
 #define LIGHT_PLAYER_UP_4_COL 3
 
+//SETTINGS
+#define DISPLAY_DIGITS 7
+#define BALLS_PER_PLAYER 3
+#define MAX_PLAYERS 4
+///////////////////////////////
+
 Bally bally;
-int credits = 0;
-int players = 0;
-int scores[4];
-boolean inPlay = false;
-short balls[4];
 
 void setup() 
 {
@@ -201,37 +196,35 @@ void setup()
     setDisplay(i, -1);
   }
   //set any lamps that should always be on
-  
-  int i = 0;
-  for(i = 0; i < 4; i++)
-  {
-    balls[i] = 0;  
-    scores[i] = 0;
-  }
-  deactivatePlayerDisplay(1);
 }
 
 void loop() 
 {
-  int result = -1;
-  while(!inPlay)
-  {
 //--init S/W state: scores, player number, ball number, drop target counters, any other game and/or ball state variables----\\
+  boolean inPlay = false;
+  int result = -1;
+  int scores[4];
+  int players = 0;
+  int dropTargetCounter[2];
+  int credits = 0;
+  int balls[4];
 //--------------------------------------------------------------------------------------------------------------------------//
 
 //--init H/W, such as game over lamp----------------------------------------------------------------------------------------\\ 
 //--------------------------------------------------------------------------------------------------------------------------//
 
+  while(!inPlay)
+  {
 //--wait for credit (play) button to be pressed-----------------------------------------------------------------------------\\
     result = bally.waitForTestCreditCoin(CR_ROW, CR_COL, COIN_ROW, COIN_COL);
 //--------------------------------------------------------------------------------------------------------------------------//
     switch(result)
     {
       case CREDIT:
-                  addCredit();
+                  addPlayer();
                   break;
       case COIN:
-                  addPlayer();
+                  addCredit();
                   break;
       case TEST:
                   test();
@@ -243,7 +236,6 @@ void loop()
 //--------------------------------------------------------------------------------------------------------------------------//
 
 //--indicate players--------------------------------------------------------------------------------------------------------\\
-
 //--------------------------------------------------------------------------------------------------------------------------//
 
 //--init score displays to zero---------------------------------------------------------------------------------------------\\
@@ -252,8 +244,7 @@ void loop()
 
   while(inPlay)
   {
-//--loop for each player and ball (3 balls per player per game)-------------------------------------------------------------\\
-    for(int roundNum = 0; roundNum < BALLS_PER_PLAYER; roundNum++)
+    for(int roundNum = 0; roundNum < BALLS_PER_PLAYER; roundNum++)//loop for each player and ball (3 balls per player per game)
     {
       for(int currentPlayer = 0; currentPlayer < players; currentPlayer++)//advance current player and/or ball number until each player has played 3 balls
       {
@@ -261,8 +252,6 @@ void loop()
         balls[currentPlayer]--;
       }
     }
-
-//--------------------------------------------------------------------------------------------------------------------------//
   }
 
 
@@ -276,7 +265,6 @@ void loop()
 
 void playMatch(int currentPlayer)
 {
-  
 //------zero the switch memory so don’t retain sticky hits from before------------------------------------------------------\\
 //--------------------------------------------------------------------------------------------------------------------------//
 
@@ -304,15 +292,15 @@ void addCredit()
   if(inPlay == false)
   {
     credits++;
-    setDisplayFive();  
+    setDisplay(5, credits * 1000 + players); 
   }
 }
 
 void addPlayer()
 {
-  if(credits > 0 && players < 4 && inPlay == false)
+  if((credits > 0) && (players < MAX_PLAYERS) && (inPlay == false))
   {
-    credits--;  
+    credits--;
     balls[players] = 3;
     players++;
     setDisplay(5, credits * 1000 + players);
@@ -370,3 +358,5 @@ void setDisplay(int displayNum, int number)
     bally.setDisplay(displayNum, i, digits[DISPLAY_DIGITS - i]);
   }
 }
+
+
