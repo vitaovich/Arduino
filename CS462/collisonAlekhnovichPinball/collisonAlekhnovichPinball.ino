@@ -197,7 +197,6 @@ void setup()
   Serial.begin(9600);
 
   //blank score displays
-//  setNumDisplay(1, 1003, 0xff);
   for(int i = 0; i < 5; i++)
   {
     setNumDisplay(i, -1, 0xff);
@@ -245,7 +244,7 @@ void loop()
                   break;
       case TEST:
                   test();
-                  inPlay = true;
+                  inPlay = true;             
                   break;
     }
   } 
@@ -258,8 +257,6 @@ void loop()
 
 //--init score displays to zero---------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------
-
-
   while(inPlay)
   {
     for(int roundNum = 0; roundNum < BALLS_PER_PLAYER; roundNum++)//loop for each player and ball (3 balls per player per game)
@@ -267,6 +264,7 @@ void loop()
       for(int currentPlayer = 0; currentPlayer < players; currentPlayer++)//advance current player and/or ball number until each player has played 3 balls
       {
         playMatch(currentPlayer);
+        
         balls[currentPlayer]--;
       }
     }
@@ -284,7 +282,7 @@ void loop()
 void playMatch(int currentPlayer)
 {
 //------zero the switch memory so don’t retain sticky hits from before------------------------------------------------------
-  bally.setLamp(14, currentPlayer, true);
+  
 //--------------------------------------------------------------------------------------------------------------------------
 
 //------init any S/W and H/W state that should reset on each ball-----------------------------------------------------------
@@ -292,7 +290,9 @@ void playMatch(int currentPlayer)
 //--------------------------------------------------------------------------------------------------------------------------
 
 //------light current player up and display the ball number-----------------------------------------------------------------
-
+  bally.setLamp(LIGHT_PLAYER_UP_ROW, currentPlayer, true);
+  bally.setLamp(LIGHT_CAN_PLAY_ROW, currentPlayer, true);
+  while(true);
 //--------------------------------------------------------------------------------------------------------------------------
 
 //------fire the outhole solenoid to eject a ball---------------------------------------------------------------------------
@@ -329,6 +329,7 @@ void addPlayer()
     balls[players] = 3;
     players++;
     setNumDisplay(4, credits * 1000 + players, 0xf9);
+    bally.fireSolenoid(OUT_HOLE, false);
   }  
 }
 
@@ -372,11 +373,8 @@ void setNumDisplay(int displayNum, long something, char onDisplays)
       onDisplays = onDisplays >> 1;
     }
   }
-
   for(int i = 0; i < DISPLAY_DIGITS;i++)
   {
     bally.setDisplay(displayNum, i, digits[DISPLAY_DIGITS - i]);
   }
 }
-
-
