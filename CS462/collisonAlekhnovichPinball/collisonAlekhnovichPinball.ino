@@ -28,7 +28,7 @@
 //----------------------------------//
 
 
-//----COIN SWITCH ROW AND COLUMN----\\
+//----COIN SWITCH ROW AND COLUMN----
 #define CR_ROW   0
 #define CR_COL   5
 #define COIN_ROW 1
@@ -184,6 +184,12 @@
 ///////////////////////////////
 
 Bally bally;
+int players = 0;
+boolean inPlay = false;
+int credits = 0;
+int scores[4];
+int dropTargetCounter[2];
+int balls[4];
 
 void setup() 
 {
@@ -197,23 +203,29 @@ void setup()
   }
   //set any lamps that should always be on
 }
-
+  
 void loop() 
 {
-//--init S/W state: scores, player number, ball number, drop target counters, any other game and/or ball state variables----\\
-  boolean inPlay = false;
+//--init S/W state: scores, player number, ball number, drop target counters, any other game and/or ball state variables----
   int result = -1;
-  int scores[4];
-  int players = 0;
-  int dropTargetCounter[2];
-  int credits = 0;
-  int balls[4];
+  players = 0;
+  inPlay = false;
+  credits = 0;
+  for(int i = 0; i < 4; i++)
+  {
+    scores[i] = 0;
+    balls[i] = 0;
+  }
+  for(int i = 0; i < 2; i++)
+  {
+    dropTargetCounter[i]= 0;
+  }
 //--------------------------------------------------------------------------------------------------------------------------//
 
 //--init H/W, such as game over lamp----------------------------------------------------------------------------------------\\ 
 //--------------------------------------------------------------------------------------------------------------------------//
 
-//--wait for credit (play) button to be pressed-----------------------------------------------------------------------------\\
+//--wait for credit (play) button to be pressed-----------------------------------------------------------------------------
 
   while(!inPlay)
   {
@@ -269,24 +281,31 @@ void loop()
 void playMatch(int currentPlayer)
 {
 //------zero the switch memory so don’t retain sticky hits from before------------------------------------------------------\\
+
 //--------------------------------------------------------------------------------------------------------------------------//
 
 //------init any S/W and H/W state that should reset on each ball-----------------------------------------------------------\\
+
 //--------------------------------------------------------------------------------------------------------------------------//
 
 //------light current player up and display the ball number-----------------------------------------------------------------\\
+
 //--------------------------------------------------------------------------------------------------------------------------//
 
 //------fire the outhole solenoid to eject a ball---------------------------------------------------------------------------\\
+
 //--------------------------------------------------------------------------------------------------------------------------//
 
 //------loop, reading each playfield switch---------------------------------------------------------------------------------\\
+
 //--------------------------------------------------------------------------------------------------------------------------//
 
 //---------for each switch hit, take appropriate action (add player, fire solenoid, add points, play chime, arm bonus, etc.)\\
+
 //--------------------------------------------------------------------------------------------------------------------------//
 
 //------until the outlane switch is read------------------------------------------------------------------------------------\\
+
 //--------------------------------------------------------------------------------------------------------------------------//
 }
 
@@ -327,11 +346,6 @@ void deactivatePlayerDisplay(int player)
   // need to finish. Haven't figured out whether or not BallyLib has been overriding my attemps to blank displays.
 }
 
-void setDisplayFive()
-{
-  setPlayerScore(5, credits * 1000 + players);
-}
-
 void test()
 {
   
@@ -344,7 +358,7 @@ void setDisplay(int displayNum, int number)
  
   if(number != -1)
   {
-    for(int i = DISPLAY_DIGITS; i > 0 ; i++)
+    for(int i = N_DIGITS; i > 0 ; i++)
     {
       digits[i] = extractNumber % 10;
       extractNumber = extractNumber / 10;
