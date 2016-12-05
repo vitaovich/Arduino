@@ -204,7 +204,7 @@ void setup()
   {
     setNumDisplay(i, -1, 0xff);
   }
-  //set any lamps that should always be on
+  bally.setLamp(LIGHT_GAME_OVER_ROW, LIGHT_GAME_OVER_COL, true);
 }
   
 void loop() 
@@ -259,9 +259,9 @@ void loop()
 
 //--init score displays to zero---------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------
+  bally.setLamp(LIGHT_GAME_OVER_ROW, LIGHT_GAME_OVER_COL, false);
   while(inPlay)
   {
-    
     for(int roundNum = 0; roundNum < BALLS_PER_PLAYER; roundNum++)//loop for each player and ball (3 balls per player per game)
     {
       static int current = 0;
@@ -270,11 +270,13 @@ void loop()
         Serial.print("Current player:");
         Serial.println(current);
         playMatch(current);
+        balls[current]--;
         current++;
         current = current % players;
       }
     }
   }
+  bally.setLamp(LIGHT_GAME_OVER_ROW, LIGHT_GAME_OVER_COL, true);
 
 
 //--check for high score (optional)-----------------------------------------------------------------------------------------
@@ -300,7 +302,7 @@ void playMatch(int currentPlayer)
   char res;
 
   boolean ballHasNotTouchedOutHole = true;  
-  boolean ballHasTouchedSomething = false;
+  static boolean ballHasTouchedSomething = false;
   int i = 0;
   char val;
 
@@ -443,8 +445,6 @@ void playMatch(int currentPlayer)
       scores[currentPlayer] += 1000;
     }
 
-    // READ RAW SWITCH STATE FOR SLINGSHOT SWITCHES
-
     if(bally.getSwitch(SLINGSHOT_ROW, SLINGSHOT_RIGHT))
     {
       Serial.println("Ball has touched Slingshot Right");
@@ -487,7 +487,6 @@ void playMatch(int currentPlayer)
       bally.fireSolenoid(THUMPER_LEFT_TOP, false);
     }
 
-
     prevCoinPressed = coinPressed;
     coinPressed = bally.getCabSwitch(COIN_ROW, COIN_COL);
     prevCreditPressed = creditPressed;
@@ -519,19 +518,16 @@ void playMatch(int currentPlayer)
         Serial.println("CANNOT ADD CREDIT");        
       }
     }
+    setNumDisplayPlayers(currentPlayer, scores[currentPlayer]);
+    if(ballHasTouchedSomething)
+    {
+      bally.setLamp(LIGHT_BALL_IN_PLAY_ROW, LIGHT_BALL_IN_PLAY_COL, true);
+      setNumDisplay(4, credits * 1000 + balls[currentPlayer], 0xf9);
+    }
   }
 //------loop, reading each playfield switch---------------------------------------------------------------------------------
   Serial.print("Finished game for player:");
   Serial.println(currentPlayer);
-//--------------------------------------------------------------------------------------------------------------------------
-
-//---------for each switch hit, take appropriate action (add player, fire solenoid, add points, play chime, arm bonus, etc.)
-
-//--------------------------------------------------------------------------------------------------------------------------
-
-//------until the outlane switch is read------------------------------------------------------------------------------------
-
-//--------------------------------------------------------------------------------------------------------------------------
 
   bally.setLamp(LIGHT_PLAYER_UP_ROW, currentPlayer, false);
 }
@@ -543,16 +539,13 @@ void advanceBonus()
 
 void addCredit()
 {
-//  if(inPlay == false)
-//  {
-    credits++;
-    setNumDisplay(4, credits * 1000 + players, 0xf9);
-//  }
+  credits++;
+  setNumDisplay(4, credits * 1000 + players, 0xf9);
 }
 
 void addPlayer()
 {
-  if(credits > 0 && players < MAX_PLAYERS)// && inPlay == false)
+  if(credits > 0 && players < MAX_PLAYERS)
   {
     credits--;
     balls[players] = 3;
