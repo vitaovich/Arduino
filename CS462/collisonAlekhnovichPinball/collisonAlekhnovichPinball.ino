@@ -77,6 +77,9 @@
 #define OUT_LANE_LEFT 1
 //---------------------------------
 
+#define OUT_HOLE_ROW 0
+#define OUT_HOLE_SWITCH 7
+
 //--------SLINGSHOT--------
 #define SLINGSHOT_ROW 4
 #define SLINGSHOT_RIGHT 2
@@ -195,7 +198,6 @@ void setup()
 {
   //initialize serial port (for sending debug messages)
   Serial.begin(9600);
-  Serial.println(B1110, BIN);
   //blank score displays
   for(int i = 0; i < 5; i++)
   {
@@ -261,11 +263,14 @@ void loop()
   {
     for(int roundNum = 0; roundNum < BALLS_PER_PLAYER; roundNum++)//loop for each player and ball (3 balls per player per game)
     {
-      for(int currentPlayer = 0; currentPlayer < players; currentPlayer++)//advance current player and/or ball number until each player has played 3 balls
+      static int current = 0;
+      for(int i = 0; i < players; i++)
       {
-        playMatch(currentPlayer);
-        
-        balls[currentPlayer]--;
+        Serial.print("Current player:");
+        Serial.println(current);
+        playMatch(current);
+        current++;
+        current = current % players;
       }
     }
   }
@@ -281,26 +286,58 @@ void loop()
 
 void playMatch(int currentPlayer)
 {
+  Serial.print("Starting game for player:");
+  Serial.println(currentPlayer);
 //------zero the switch memory so don’t retain sticky hits from before------------------------------------------------------
   bally.zeroSwitchMemory();
+  
 //--------------------------------------------------------------------------------------------------------------------------
 
 //------init any S/W and H/W state that should reset on each ball-----------------------------------------------------------
-
+  bool gameover = false;
+  bool outHoleResult = false;
+  char res;
 //--------------------------------------------------------------------------------------------------------------------------
 
 //------light current player up and display the ball number-----------------------------------------------------------------
-  bally.setLamp(LIGHT_PLAYER_UP_ROW, currentPlayer, true);
   bally.setLamp(LIGHT_CAN_PLAY_ROW, currentPlayer, true);
-  while(true);
 //--------------------------------------------------------------------------------------------------------------------------
 
 //------fire the outhole solenoid to eject a ball---------------------------------------------------------------------------
   bally.fireSolenoid(OUT_HOLE, false);
 //--------------------------------------------------------------------------------------------------------------------------
 
-//------loop, reading each playfield switch---------------------------------------------------------------------------------
+  while(!gameover)
+  {
+    outHoleResult = bally.getSwitch(OUT_HOLE_ROW, OUT_HOLE_SWITCH);
+    if(outHoleResult)
+    {
+      Serial.println("game over");
+      gameover = true;
+    }
+    
+    res = bally.getDebouncedRow(2);
+    res = res & 0xff;
+    Serial.print("Drop targets: ");
+    Serial.println(res, HEX); 
 
+    if((res & 0xf) == 0xf)
+    {
+      bally.fireSolenoid(DROP_TARGET_RIGHT_RESET, true, true);
+    }
+    Serial.print("Drop targets2: ");
+    Serial.println(res >> 4, HEX);  
+    Serial.println(res, HEX); 
+    Serial.println((res >> 4) & 0xf, HEX); 
+    if(((res >> 4) & 0xf) == 0xf)
+    {
+      bally.fireSolenoid(DROP_TARGET_LEFT_RESET, true, true);
+    }
+    delay(1000);
+  }
+//------loop, reading each playfield switch---------------------------------------------------------------------------------
+  Serial.print("Finished game for player:");
+  Serial.println(currentPlayer);
 //--------------------------------------------------------------------------------------------------------------------------
 
 //---------for each switch hit, take appropriate action (add player, fire solenoid, add points, play chime, arm bonus, etc.)
@@ -310,6 +347,8 @@ void playMatch(int currentPlayer)
 //------until the outlane switch is read------------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------------------------------------------------
+
+  bally.setLamp(LIGHT_CAN_PLAY_ROW, currentPlayer, false);
 }
 
 void addCredit()
@@ -327,27 +366,11 @@ void addPlayer()
   {
     credits--;
     balls[players] = 3;
+    bally.setLamp(LIGHT_PLAYER_UP_ROW, players, true);
     players++;
     setNumDisplay(4, credits * 1000 + players, 0xf9);
     
   }  
-}
-
-void setPlayerScore(int player, long score) // use 1-based player number. Still need to disable leading 0s.
-{
-    bally.setDisplay(player - 1, 5, score / 100000);
-    bally.setDisplay(player - 1, 4, (score / 10000) % 10);
-    bally.setDisplay(player - 1, 3, (score / 1000) % 10);
-    bally.setDisplay(player - 1, 2, (score / 100) % 10);
-    bally.setDisplay(player - 1, 1, (score / 10) % 10);
-    bally.setDisplay(player - 1, 0, score % 10);
-}
-
-void deactivatePlayerDisplay(int player)
-{
-  static short digit[] = {39, 40, 41, 50, 51, 52, 53};
-  static short scoreDisplay[] = {26, 27, 28, 29, 38};
-  // need to finish. Haven't figured out whether or not BallyLib has been overriding my attemps to blank displays.
 }
 
 void test()
