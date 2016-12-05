@@ -210,6 +210,7 @@ void setup()
 void loop() 
 {
 //--init S/W state: scores, player number, ball number, drop target counters, any other game and/or ball state variables----
+
   int result = -1;
   players = 0;
   inPlay = false;
@@ -261,7 +262,7 @@ void loop()
 //--------------------------------------------------------------------------------------------------------------------------
   while(inPlay)
   {
-    
+    bally.playSound(18);
     for(int roundNum = 0; roundNum < BALLS_PER_PLAYER; roundNum++)//loop for each player and ball (3 balls per player per game)
     {
       static int current = 0;
@@ -326,18 +327,16 @@ void playMatch(int currentPlayer)
   {
     delay(30);
     outHoleResult = bally.getSwitch(OUT_HOLE_ROW, OUT_HOLE_COL);
+
     if(outHoleResult)
     {
+      bally.playSound(18);
       Serial.println("game over");
       gameover = true;
     }
 
     // check drop table switches
     dropTargetResult = bally.getDebouncedRow(2);
-    Serial.print("current dropTarget:");
-    Serial.println(dropTargetResult, HEX);
-    Serial.print("lastDropTarget:");
-    Serial.println(lastResult, HEX);
     if((dropTargetResult & 0xff) == 0xff)
     {
       bally.fireSolenoid(DROP_TARGET_RIGHT_RESET, true, true);
@@ -347,6 +346,7 @@ void playMatch(int currentPlayer)
     if(dropTargetResult > 0 && dropTargetResult != lastResult)
     {
       bally.fireSolenoid(CHIME_LOW, false);
+      bally.playSound(33);
       lastResult = dropTargetResult;
     }
     
@@ -357,6 +357,7 @@ void playMatch(int currentPlayer)
         ballHasTouchedSomething = true;
         scores[currentPlayer] += 500;
         advanceBonus();
+        bally.playSound(2);
     }
 
     if(bally.getDebRedge(DROP_TARGET_ROW, DROP_TARGET_REBOUND))
@@ -364,10 +365,12 @@ void playMatch(int currentPlayer)
       ballHasTouchedSomething = true;
       Serial.println("Ball has touched drop target rebound.");
       // not sure yet
+      bally.playSound(32);
     }
 
     if(bally.getDebRedge(LANE_ROW, LANE_B_RIGHT))
     {
+      bally.playSound(2);
       Serial.println("Ball has touched Lane B Right");
       ballHasTouchedSomething = true;
       if(hasTouchedBTop == true)
@@ -386,6 +389,7 @@ void playMatch(int currentPlayer)
 
     if(bally.getDebRedge(LANE_ROW, LANE_A_LEFT))
     {
+      bally.playSound(24);
       Serial.println("Ball has touched Lane A Left");
       ballHasTouchedSomething = true;
       if(hasTouchedATop == true)
@@ -404,6 +408,7 @@ void playMatch(int currentPlayer)
 
     if(bally.getDebRedge(LANE_ROW, LANE_B_TOP))
     {
+      bally.playSound(30);
       Serial.println("Ball has touched Lane B Top");
       ballHasTouchedSomething = true;
       if(hasTouchedBRight == true)
@@ -422,6 +427,7 @@ void playMatch(int currentPlayer)
 
     if(bally.getDebRedge(LANE_ROW, LANE_A_TOP))
     {
+      bally.playSound(36);
       Serial.println("Ball has touched Lane A Top");
       ballHasTouchedSomething = true;
       if(hasTouchedALeft == true)
@@ -449,6 +455,7 @@ void playMatch(int currentPlayer)
   
     if(bally.getDebRedge(OUT_LANE_ROW, OUT_LANE_RIGHT) || bally.getDebRedge(OUT_LANE_ROW, OUT_LANE_LEFT))
     {
+      bally.playSound(2);
       Serial.println("Ball has touched Out Lane Right");
       ballHasTouchedSomething = true;
       scores[currentPlayer] += 1000;
@@ -459,6 +466,7 @@ void playMatch(int currentPlayer)
 
     if(bally.getSwitch(SLINGSHOT_ROW, SLINGSHOT_RIGHT))
     {
+      bally.playSound(24);
       Serial.println("Ball has touched Slingshot Right");
       ballHasTouchedSomething = true;
       bally.fireSolenoid(SLINGSHOT_SOLENOID_RIGHT, true);
@@ -466,6 +474,7 @@ void playMatch(int currentPlayer)
 
     if(bally.getSwitch(SLINGSHOT_ROW, SLINGSHOT_LEFT))
     {
+      bally.playSound(26);
       Serial.println("Ball has touched Slingshot Left");
       ballHasTouchedSomething = true;
       bally.fireSolenoid(SLINGSHOT_SOLENOID_LEFT, true);
@@ -473,6 +482,7 @@ void playMatch(int currentPlayer)
 
     if(bally.getSwitch(POP_BUMPER_ROW, POP_BUMPER_BOTTOM_RIGHT))
     {
+      bally.playSound(29);
       Serial.println("Ball has touched Pop Bumper Bottom Right");
       ballHasTouchedSomething = true;
       bally.fireSolenoid(THUMPER_RIGHT_BOTTOM, false);
@@ -488,6 +498,7 @@ void playMatch(int currentPlayer)
 
     if(bally.getSwitch(POP_BUMPER_ROW, POP_BUMPER_BOTTOM_LEFT))
     {
+      bally.playSound(26);
       Serial.println("Ball has touched Pop Bumper Bottom Left");
       ballHasTouchedSomething = true;
       bally.fireSolenoid(THUMPER_LEFT_BOTTOM, false);
@@ -513,6 +524,7 @@ void playMatch(int currentPlayer)
       {
         addCredit();
         Serial.println("SUCCESSFULLY added player");
+        bally.playSound(24);
       }  
       else
       {
@@ -526,6 +538,7 @@ void playMatch(int currentPlayer)
       {
         Serial.println("SUCCESSFULLY added credit");
         addPlayer();
+        bally.playSound(24);
       }  
 
       else
