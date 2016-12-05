@@ -308,6 +308,10 @@ void playMatch(int currentPlayer)
   boolean hasTouchedALeft = false;
   boolean hasTouchedBTop = false;
   boolean hasTouchedBRight = false;
+  boolean coinPressed = false;
+  boolean prevCoinPressed = false;
+  boolean creditPressed = false;
+  boolean prevCreditPressed = false;
 //--------------------------------------------------------------------------------------------------------------------------
 
 //------light current player up and display the ball number-----------------------------------------------------------------
@@ -321,6 +325,7 @@ void playMatch(int currentPlayer)
 
   while(!gameover)
   {
+    delay(30);
     outHoleResult = bally.getSwitch(OUT_HOLE_ROW, OUT_HOLE_COL);
     if(outHoleResult)
     {
@@ -482,26 +487,38 @@ void playMatch(int currentPlayer)
       bally.fireSolenoid(THUMPER_LEFT_TOP, false);
     }
 
-    if(bally.getDebRedge(CR_ROW, CR_COL))
+
+    prevCoinPressed = coinPressed;
+    coinPressed = bally.getCabSwitch(COIN_ROW, COIN_COL);
+    prevCreditPressed = creditPressed;
+    creditPressed = bally.getCabSwitch(CR_ROW, CR_COL);
+    
+    if(prevCoinPressed && !coinPressed)
     {
       if(!ballHasTouchedSomething)
       {
+        addCredit();
         Serial.println("SUCCESSFULLY added player");
-        addPlayer();
       }  
-      Serial.println("CANNOT ADD PLAYER");
+      else
+      {
+        Serial.println("CANNOT ADD PLAYER");
+      }
     }
 
-    if(bally.getDebRedge(COIN_ROW, COIN_COL))
+    if(prevCreditPressed && !creditPressed)
     {
       if(!ballHasTouchedSomething)
       {
         Serial.println("SUCCESSFULLY added credit");
-        addCredit();
+        addPlayer();
       }  
-      Serial.println("CANNOT ADD CREDIT");
+
+      else
+      {
+        Serial.println("CANNOT ADD CREDIT");        
+      }
     }
-    delay(30);
   }
 //------loop, reading each playfield switch---------------------------------------------------------------------------------
   Serial.print("Finished game for player:");
@@ -526,16 +543,16 @@ void advanceBonus()
 
 void addCredit()
 {
-  if(inPlay == false)
-  {
+//  if(inPlay == false)
+//  {
     credits++;
     setNumDisplay(4, credits * 1000 + players, 0xf9);
-  }
+//  }
 }
 
 void addPlayer()
 {
-  if(credits > 0 && players < MAX_PLAYERS && inPlay == false)
+  if(credits > 0 && players < MAX_PLAYERS)// && inPlay == false)
   {
     credits--;
     balls[players] = 3;
