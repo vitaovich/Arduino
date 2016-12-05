@@ -195,7 +195,7 @@ void setup()
 {
   //initialize serial port (for sending debug messages)
   Serial.begin(9600);
-
+  Serial.println(B1110, BIN);
   //blank score displays
   for(int i = 0; i < 5; i++)
   {
@@ -282,7 +282,7 @@ void loop()
 void playMatch(int currentPlayer)
 {
 //------zero the switch memory so don’t retain sticky hits from before------------------------------------------------------
-  
+  bally.zeroSwitchMemory();
 //--------------------------------------------------------------------------------------------------------------------------
 
 //------init any S/W and H/W state that should reset on each ball-----------------------------------------------------------
@@ -296,7 +296,7 @@ void playMatch(int currentPlayer)
 //--------------------------------------------------------------------------------------------------------------------------
 
 //------fire the outhole solenoid to eject a ball---------------------------------------------------------------------------
-
+  bally.fireSolenoid(OUT_HOLE, false);
 //--------------------------------------------------------------------------------------------------------------------------
 
 //------loop, reading each playfield switch---------------------------------------------------------------------------------
@@ -323,13 +323,13 @@ void addCredit()
 
 void addPlayer()
 {
-  if((credits > 0) && (players < MAX_PLAYERS) && (inPlay == false))
+  if(credits > 0 && players < MAX_PLAYERS && inPlay == false)
   {
     credits--;
     balls[players] = 3;
     players++;
     setNumDisplay(4, credits * 1000 + players, 0xf9);
-    bally.fireSolenoid(OUT_HOLE, false);
+    
   }  
 }
 
