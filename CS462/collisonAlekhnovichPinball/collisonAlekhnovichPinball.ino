@@ -11,7 +11,7 @@
 #define CHIME_LOW 8
 #define CHIME_MID_HIGH 4
 #define CHIME_HIGH 12
-#define CHIME_LOW 2
+#define CHIME_LOW2 2
 #define KNOCKER 10
 #define OUT_HOLE 6
 #define THUMPER_LEFT_BOTTOM 14
@@ -185,15 +185,16 @@
 #define DISPLAY_DIGITS 7
 #define BALLS_PER_PLAYER 3
 #define MAX_PLAYERS 4
+#define STANDARD_DELAY 30
 ///////////////////////////////
 
 Bally bally;
 int players = 0;
 boolean inPlay = false;
 int credits = 0;
-int scores[4];
+long scores[4];
 int dropTargetCounter[2];
-int balls[4];
+short balls[4];
 
 void setup() 
 {
@@ -231,24 +232,28 @@ void loop()
 //-------------------------------------------------------------------------------------------------------------------------
 
 //--wait for credit (play) button to be pressed-----------------------------------------------------------------------------
-
+  boolean coinPressed = false;
+  boolean prevCoinPressed = false;
+  boolean creditPressed = false;
+  boolean prevCreditPressed = false;
   while(!inPlay)
   {
-    result = bally.waitForTestCreditCoin(CR_ROW, CR_COL, COIN_ROW, COIN_COL);
-    switch(result)
+    prevCoinPressed = coinPressed;
+    coinPressed = bally.getCabSwitch(COIN_ROW, COIN_COL);
+    prevCreditPressed = creditPressed;
+    creditPressed = bally.getCabSwitch(CR_ROW, CR_COL); 
+
+    if(prevCoinPressed && !coinPressed)
     {
-      case CREDIT:
-                  addPlayer();
-                  inPlay = true;
-                  break;
-      case COIN:
-                  addCredit();
-                  break;
-      case TEST:
-                  test();
-                  inPlay = true;             
-                  break;
+      addCredit();
     }
+
+    if(prevCreditPressed && !creditPressed)
+    {
+      addPlayer();
+      inPlay = true;
+    }
+    delay(STANDARD_DELAY);
   } 
   bally.setContSolenoid(FLIPPER_DISABLE, false);
 //--turn off game over light------------------------------------------------------------------------------------------------
@@ -260,6 +265,7 @@ void loop()
 //--init score displays to zero---------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------
   bally.setLamp(LIGHT_GAME_OVER_ROW, LIGHT_GAME_OVER_COL, false);
+  bally.setLamp(LIGHT_BALL_IN_PLAY_ROW, LIGHT_BALL_IN_PLAY_COL, true);
   while(inPlay)
   {
     for(int roundNum = 0; roundNum < BALLS_PER_PLAYER; roundNum++)//loop for each player and ball (3 balls per player per game)
@@ -299,12 +305,11 @@ void playMatch(int currentPlayer)
 //------init any S/W and H/W state that should reset on each ball-----------------------------------------------------------
   bool gameover = false;
   bool outHoleResult = false;
-  char res;
+  int dropTargetResult, lastResult;
 
   boolean ballHasNotTouchedOutHole = true;  
   static boolean ballHasTouchedSomething = false;
   int i = 0;
-  char val;
 
   boolean hasTouchedATop = false;
   boolean hasTouchedALeft = false;
@@ -314,6 +319,7 @@ void playMatch(int currentPlayer)
   boolean prevCoinPressed = false;
   boolean creditPressed = false;
   boolean prevCreditPressed = false;
+  int bonus = 0;
 //--------------------------------------------------------------------------------------------------------------------------
 
 //------light current player up and display the ball number-----------------------------------------------------------------
@@ -327,7 +333,7 @@ void playMatch(int currentPlayer)
 
   while(!gameover)
   {
-    delay(30);
+    delay(STANDARD_DELAY);
     outHoleResult = bally.getSwitch(OUT_HOLE_ROW, OUT_HOLE_COL);
     if(outHoleResult)
     {
@@ -336,19 +342,30 @@ void playMatch(int currentPlayer)
     }
 
     // check drop table switches
-    res = bally.getDebouncedRow(2);
-    if((res & 0xff) == 0xff)
+    dropTargetResult = bally.getDebouncedRow(2);
+    Serial.print("current dropTarget:");
+    Serial.println(dropTargetResult, HEX);
+    Serial.print("lastDropTarget:");
+    Serial.println(lastResult, HEX);
+    if((dropTargetResult & 0xff) == 0xff)
     {
       bally.fireSolenoid(DROP_TARGET_RIGHT_RESET, true, true);
       bally.fireSolenoid(DROP_TARGET_LEFT_RESET, true, true);
+      bally.fireSolenoid(CHIME_HIGH, true);
     }
+    if(dropTargetResult > 0 && dropTargetResult != lastResult)
+    {
+      bally.fireSolenoid(CHIME_LOW, false);
+      lastResult = dropTargetResult;
+    }
+    
     // end drop table switches
     if(bally.getDebRedge(FLIPPER_FEED_ROW, FLIPPER_FEED_RIGHT) || bally.getDebRedge(FLIPPER_FEED_ROW, FLIPPER_FEED_LEFT))
     {
         Serial.println("Ball has touched flipper feed lane.");
         ballHasTouchedSomething = true;
         scores[currentPlayer] += 500;
-        advanceBonus();
+        bonus = advanceBonus(true);
     }
 
     if(bally.getDebRedge(DROP_TARGET_ROW, DROP_TARGET_REBOUND))
@@ -365,7 +382,7 @@ void playMatch(int currentPlayer)
       if(hasTouchedBTop == true)
       {
         hasTouchedBTop = false;
-        advanceBonus();
+        bonus = advanceBonus(true);
         bally.setLamp(LIGHT_AB_LANES_ROW, LIGHT_B_LANE_COL, false);
       }
 
@@ -383,7 +400,7 @@ void playMatch(int currentPlayer)
       if(hasTouchedATop == true)
       {
         hasTouchedATop = false;
-        advanceBonus();
+        bonus = advanceBonus(true);
         bally.setLamp(LIGHT_AB_LANES_ROW, LIGHT_A_LANE_COL, false);
       }
 
@@ -401,7 +418,7 @@ void playMatch(int currentPlayer)
       if(hasTouchedBRight == true)
       {
         hasTouchedBRight = false;
-        advanceBonus();
+        bonus = advanceBonus(true);
         bally.setLamp(LIGHT_AB_LANES_ROW, LIGHT_B_LANE_COL, false);
       }
 
@@ -419,7 +436,7 @@ void playMatch(int currentPlayer)
       if(hasTouchedALeft == true)
       {
         hasTouchedALeft = false;
-        advanceBonus();
+        bonus = advanceBonus(true);
         bally.setLamp(LIGHT_AB_LANES_ROW, LIGHT_A_LANE_COL, false);
       }
 
@@ -435,7 +452,8 @@ void playMatch(int currentPlayer)
       Serial.println("Ball has touched Top Center Kick Out Row");
       ballHasTouchedSomething = true;
       bally.fireSolenoid(KICK_OUT_TOP_CENTER, false);
-      advanceBonus(); // might want to make a cooler bonus
+      bonus = advanceBonus(true); // might want to make a cooler bonus
+      bally.fireSolenoid(CHIME_LOW2, true);
     }
   
     if(bally.getDebRedge(OUT_LANE_ROW, OUT_LANE_RIGHT) || bally.getDebRedge(OUT_LANE_ROW, OUT_LANE_LEFT))
@@ -443,6 +461,7 @@ void playMatch(int currentPlayer)
       Serial.println("Ball has touched Out Lane Right");
       ballHasTouchedSomething = true;
       scores[currentPlayer] += 1000;
+      bally.fireSolenoid(CHIME_HIGH, true);     
     }
 
     if(bally.getSwitch(SLINGSHOT_ROW, SLINGSHOT_RIGHT))
@@ -471,6 +490,7 @@ void playMatch(int currentPlayer)
       Serial.println("Ball has touched Pop Bumper Top Right");
       ballHasTouchedSomething = true;
       bally.fireSolenoid(THUMPER_RIGHT_TOP, false);
+      bally.fireSolenoid(CHIME_LOW, true);
     }
 
     if(bally.getSwitch(POP_BUMPER_ROW, POP_BUMPER_BOTTOM_LEFT))
@@ -485,6 +505,7 @@ void playMatch(int currentPlayer)
       Serial.println("Ball has touched Pop Bumper Top Left");
       ballHasTouchedSomething = true;
       bally.fireSolenoid(THUMPER_LEFT_TOP, false);
+      bally.fireSolenoid(CHIME_HIGH, true);
     }
 
     prevCoinPressed = coinPressed;
@@ -521,20 +542,68 @@ void playMatch(int currentPlayer)
     setNumDisplayPlayers(currentPlayer, scores[currentPlayer]);
     if(ballHasTouchedSomething)
     {
-      bally.setLamp(LIGHT_BALL_IN_PLAY_ROW, LIGHT_BALL_IN_PLAY_COL, true);
       setNumDisplay(4, credits * 1000 + balls[currentPlayer], 0xf9);
     }
   }
 //------loop, reading each playfield switch---------------------------------------------------------------------------------
   Serial.print("Finished game for player:");
   Serial.println(currentPlayer);
-
+  scores[currentPlayer] += bonus;
+  advanceBonus(false);
+  setNumDisplayPlayers(currentPlayer, scores[currentPlayer]);
   bally.setLamp(LIGHT_PLAYER_UP_ROW, currentPlayer, false);
 }
 
-void advanceBonus()
+int advanceBonus(boolean continuing)
 {
+  static int multiplier = 1;
+  static int bonus = 0;
+  int row = 0;
+  if(!continuing)
+  {
+    multiplier = 1;
+    bonus = 0;
+
+    int col = 0;
+    for(row = 0; row < 3; row++)
+    {
+      for(col = 0; col < 3; col++)
+      {
+        bally.setLamp(row, col, false);
+      }
+      if(row != 2)
+      {
+        bally.setLamp(row, 3, false);  
+      }
+    }
+  }
   
+  if(bonus == 10000)
+  {
+    bonus += 9000;  
+  }
+  bonus += 1000;
+
+  if(bonus > 4000)
+  {
+    row = 1;  
+  }
+
+  if(bonus > 8000)
+  {
+    row = 2;  
+  }
+  
+  if(bonus != 20000)
+  {
+    bally.setLamp(row, (bonus % 4000) / 1000 - 1, true);
+  }
+
+  else
+  {
+    bally.setLamp(LIGHT_BONUS_9_10_20_ROW, LIGHT_BONUS_20K_COL, true);  
+  }
+  return bonus;
 }
 
 void addCredit()
