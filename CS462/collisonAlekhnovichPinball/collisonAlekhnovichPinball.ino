@@ -241,6 +241,7 @@ void loop()
     {
       case CREDIT:
                   addPlayer();
+                  inPlay = true;
                   break;
       case COIN:
                   addCredit();
@@ -479,6 +480,26 @@ void playMatch(int currentPlayer)
       Serial.println("Ball has touched Pop Bumper Top Left");
       ballHasTouchedSomething = true;
       bally.fireSolenoid(THUMPER_LEFT_TOP, false);
+    }
+
+    if(bally.getDebRedge(CR_ROW, CR_COL))
+    {
+      if(!ballHasTouchedSomething)
+      {
+        Serial.println("SUCCESSFULLY added player");
+        addPlayer();
+      }  
+      Serial.println("CANNOT ADD PLAYER");
+    }
+
+    if(bally.getDebRedge(COIN_ROW, COIN_COL))
+    {
+      if(!ballHasTouchedSomething)
+      {
+        Serial.println("SUCCESSFULLY added credit");
+        addCredit();
+      }  
+      Serial.println("CANNOT ADD CREDIT");
     }
     delay(30);
   }
