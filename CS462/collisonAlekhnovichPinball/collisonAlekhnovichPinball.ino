@@ -234,9 +234,7 @@ void loop()
 
   while(!inPlay)
   {
-
     result = bally.waitForTestCreditCoin(CR_ROW, CR_COL, COIN_ROW, COIN_COL);
-
     switch(result)
     {
       case CREDIT:
@@ -262,6 +260,7 @@ void loop()
 //--------------------------------------------------------------------------------------------------------------------------
   while(inPlay)
   {
+    
     for(int roundNum = 0; roundNum < BALLS_PER_PLAYER; roundNum++)//loop for each player and ball (3 balls per player per game)
     {
       static int current = 0;
@@ -311,7 +310,8 @@ void playMatch(int currentPlayer)
 //--------------------------------------------------------------------------------------------------------------------------
 
 //------light current player up and display the ball number-----------------------------------------------------------------
-  bally.setLamp(LIGHT_CAN_PLAY_ROW, currentPlayer, true);
+
+  bally.setLamp(LIGHT_PLAYER_UP_ROW, currentPlayer, true);
 //--------------------------------------------------------------------------------------------------------------------------
 
 //------fire the outhole solenoid to eject a ball---------------------------------------------------------------------------
@@ -495,7 +495,7 @@ void playMatch(int currentPlayer)
 
 //--------------------------------------------------------------------------------------------------------------------------
 
-  bally.setLamp(LIGHT_CAN_PLAY_ROW, currentPlayer, false);
+  bally.setLamp(LIGHT_PLAYER_UP_ROW, currentPlayer, false);
 }
 
 void advanceBonus()
@@ -508,7 +508,7 @@ void addCredit()
   if(inPlay == false)
   {
     credits++;
-    setNumDisplay(4, credits * 1000 + players, 0xf9); 
+    setNumDisplay(4, credits * 1000 + players, 0xf9);
   }
 }
 
@@ -518,10 +518,10 @@ void addPlayer()
   {
     credits--;
     balls[players] = 3;
-    bally.setLamp(LIGHT_PLAYER_UP_ROW, players, true);
+    bally.setLamp(LIGHT_CAN_PLAY_ROW, players, true);
+    setNumDisplayPlayers(players, 0);
     players++;
     setNumDisplay(4, credits * 1000 + players, 0xf9);
-    
   }  
 }
 
@@ -530,13 +530,22 @@ void test()
   
 }
 
-void setNumDisplay(int displayNum, long something, char onDisplays)
+void setNumDisplayPlayers(int displayNum, long something)
+{
+  setNumDisplay(displayNum, something, 0x3f);
+}
+
+void setNumDisplay(int displayNum, long numberToDisplay, char onDisplays)
 {
   int digits[] = {10, 10, 10, 10, 10, 10, 10, 10};
-  long extractNumber = something;
+  long extractNumber = numberToDisplay;
   int currentDigit;
-  if(something != -1)
+  if(numberToDisplay != -1)
   {
+    if(numberToDisplay == 0)
+    {
+      digits[DISPLAY_DIGITS] = 0;
+    }
     for(int i = DISPLAY_DIGITS; extractNumber != 0 || i == 0 ; i--)
     {
       currentDigit = extractNumber % 10;
