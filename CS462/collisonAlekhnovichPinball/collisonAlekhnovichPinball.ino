@@ -11,7 +11,7 @@
 #define CHIME_LOW 8
 #define CHIME_MID_HIGH 4
 #define CHIME_HIGH 12
-#define CHIME_LOW 2
+#define CHIME_LOW2 2
 #define KNOCKER 10
 #define OUT_HOLE 6
 #define THUMPER_LEFT_BOTTOM 14
@@ -297,12 +297,11 @@ void playMatch(int currentPlayer)
 //------init any S/W and H/W state that should reset on each ball-----------------------------------------------------------
   bool gameover = false;
   bool outHoleResult = false;
-  char res;
+  int dropTargetResult, lastResult;
 
   boolean ballHasNotTouchedOutHole = true;  
   boolean ballHasTouchedSomething = false;
   int i = 0;
-  char val;
 
   boolean hasTouchedATop = false;
   boolean hasTouchedALeft = false;
@@ -329,12 +328,23 @@ void playMatch(int currentPlayer)
     }
 
     // check drop table switches
-    res = bally.getDebouncedRow(2);
-    if((res & 0xff) == 0xff)
+    dropTargetResult = bally.getDebouncedRow(2);
+    Serial.print("current dropTarget:");
+    Serial.println(dropTargetResult, HEX);
+    Serial.print("lastDropTarget:");
+    Serial.println(lastResult, HEX);
+    if((dropTargetResult & 0xff) == 0xff)
     {
       bally.fireSolenoid(DROP_TARGET_RIGHT_RESET, true, true);
       bally.fireSolenoid(DROP_TARGET_LEFT_RESET, true, true);
+      bally.fireSolenoid(CHIME_HIGH, true);
     }
+    if(dropTargetResult > 0 && dropTargetResult != lastResult)
+    {
+      bally.fireSolenoid(CHIME_LOW, false);
+      lastResult = dropTargetResult;
+    }
+    
     // end drop table switches
     if(bally.getDebRedge(FLIPPER_FEED_ROW, FLIPPER_FEED_RIGHT) || bally.getDebRedge(FLIPPER_FEED_ROW, FLIPPER_FEED_LEFT))
     {
@@ -429,6 +439,7 @@ void playMatch(int currentPlayer)
       ballHasTouchedSomething = true;
       bally.fireSolenoid(KICK_OUT_TOP_CENTER, false);
       advanceBonus(); // might want to make a cooler bonus
+      bally.fireSolenoid(CHIME_LOW2, true);
     }
   
     if(bally.getDebRedge(OUT_LANE_ROW, OUT_LANE_RIGHT) || bally.getDebRedge(OUT_LANE_ROW, OUT_LANE_LEFT))
@@ -436,6 +447,7 @@ void playMatch(int currentPlayer)
       Serial.println("Ball has touched Out Lane Right");
       ballHasTouchedSomething = true;
       scores[currentPlayer] += 1000;
+      bally.fireSolenoid(CHIME_HIGH, true);     
     }
 
     // READ RAW SWITCH STATE FOR SLINGSHOT SWITCHES
@@ -466,6 +478,7 @@ void playMatch(int currentPlayer)
       Serial.println("Ball has touched Pop Bumper Top Right");
       ballHasTouchedSomething = true;
       bally.fireSolenoid(THUMPER_RIGHT_TOP, false);
+      bally.fireSolenoid(CHIME_LOW, true);
     }
 
     if(bally.getSwitch(POP_BUMPER_ROW, POP_BUMPER_BOTTOM_LEFT))
@@ -480,6 +493,7 @@ void playMatch(int currentPlayer)
       Serial.println("Ball has touched Pop Bumper Top Left");
       ballHasTouchedSomething = true;
       bally.fireSolenoid(THUMPER_LEFT_TOP, false);
+      bally.fireSolenoid(CHIME_HIGH, true);
     }
 
     if(bally.getDebRedge(CR_ROW, CR_COL))
@@ -502,6 +516,7 @@ void playMatch(int currentPlayer)
       Serial.println("CANNOT ADD CREDIT");
     }
     delay(30);
+    setNumDisplayPlayers(currentPlayer, scores[currentPlayer]);
   }
 //------loop, reading each playfield switch---------------------------------------------------------------------------------
   Serial.print("Finished game for player:");
